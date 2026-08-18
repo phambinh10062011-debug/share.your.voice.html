@@ -1,1 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THE FACT - Universal Database</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
+        body {
+            background: linear-gradient(135deg, #1d4ed8 0%, #3b82f6 50%, #60a5fa 100%);
+            color: #ffffff; min-height: 100vh; padding: 20px; scroll-behavior: smooth;
+        }
+        #auth-section {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, #090d16 0%, #0f172a 50%, #1e1b4b 100%);
+            display: flex; justify-content: center; align-items: center; z-index: 9999;
+        }
+        .auth-card {
+            background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(253, 224, 71, 0.3);
+            padding: 40px; border-radius: 20px; width: 420px; max-width: 90%;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6); text-align: center; backdrop-filter: blur(10px);
+        }
+        .auth-card h2 { color: #fde047; font-size: 1.8rem; margin-bottom: 8px; }
+        .auth-card p { color: #94a3b8; font-size: 0.9rem; margin-bottom: 25px; }
+        .auth-toggle { margin-top: 15px; font-size: 0.85rem; color: #93c5fd; cursor: pointer; }
+        .auth-toggle:hover { text-decoration: underline; color: #fde047; }
+        #main-app { display: none; }
+        header.main-header {
+            display: flex; justify-content: space-between; align-items: center; max-width: 1200px; margin: 0 auto; padding: 20px 0;
+        }
+        .logo-area { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.5rem; letter-spacing: -0.5px; }
+        .nav-links { display: flex; list-style: none; gap: 35px; align-items: center; }
+        .nav-links a { color: #ffffff; text-decoration: none; font-weight: 500; font-size: 0.95rem; opacity: 0.9; }
+        .nav-links a:hover { opacity: 1; }
+        .cta-roadmap-btn {
+            background: #0f172a; color: white; padding: 12px 26px; border-radius: 30px; text-decoration: none; font-weight: 600; font-size: 0.95rem; box-shadow: 0 4px 12px rgba(0,0,0,0.15); transition: 0.2s;
+        }
+        .cta-roadmap-btn:hover { background: #1e293b; }
 
+        .hero-section {
+            max-width: 1200px; margin: 40px auto; display: flex; justify-content: space-between; align-items: center; gap: 40px; padding: 20px 0;
+        }
+        .hero-left { flex: 1.1; }
+        .hero-left h1 { font-size: 3rem; font-weight: 700; line-height: 1.15; margin-bottom: 20px; letter-spacing: -1px; }
+        .hero-left p { font-size: 1.05rem; line-height: 1.6; opacity: 0.95; margin-bottom: 30px; max-width: 540px; }
+        .find-btn {
+            background: #1e3a8a; color: white; border: none; padding: 16px 32px; border-radius: 10px; font-weight: 600; font-size: 1rem; cursor: pointer; box-shadow: 0 6px 20px rgba(0,0,0,0.2); display: inline-flex; align-items: center; gap: 10px; text-decoration: none; transition: 0.2s;
+        }
+        .find-btn:hover { background: #1d4ed8; }
+        .trusted-text { margin-top: 30px; font-size: 0.9rem; opacity: 0.9; font-weight: 500; }
+
+        .hero-right { flex: 0.9; display: flex; justify-content: center; position: relative; }
+        .map-circle {
+            width: 420px; height: 420px; background: #f1f5f9; border-radius: 50%; overflow: hidden; box-shadow: 0 25px 50px rgba(0,0,0,0.25); position: relative; border: 8px solid rgba(255, 255, 255, 0.4);
+        }
+        #userMap { width: 100%; height: 100%; z-index: 1; }
+        .map-badge {
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: white; color: #0f172a; padding: 10px 22px; border-radius: 30px; font-weight: 700; font-size: 0.85rem; box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 1000; white-space: nowrap;
+        }
+        .hacker-stats-bar {
+            max-width: 1100px; margin: 0 auto 35px auto; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 20px; padding: 22px 35px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .hs-left { display: flex; align-items: center; gap: 20px; }
+        .hs-avatar { width: 55px; height: 55px; background: #fde047; color: #0f172a; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.4rem; font-weight: 700; }
+        .hs-info h3 { font-size: 1.15rem; font-weight: 700; color: #fde047; }
+        .hs-info p { font-size: 0.88rem; opacity: 0.9; }
+        .hs-metrics { display: flex; gap: 40px; }
+        .hs-metric-box { text-align: center; }
+        .hs-metric-value { font-size: 1.5rem; font-weight: 700; color: #fde047; }
+        .hs-metric-label { font-size: 0.78rem; text-transform: uppercase; opacity: 0.8; letter-spacing: 1px; }
+
+       <div id="auth-section">
+        <div class="auth-card">
+            <h2 id="authTitle">🎤 SHARE YOUR VOICE</h2>
+            <p id="authSubtitle">Community Database Platform</p>
+
+            <div style="text-align: left; margin-bottom: 15px;">
+                <label style="display: block; font-size: 0.9rem; color: #93c5fd; margin-bottom: 6px; font-weight: 500;">Username:</label>
+                <input type="text" id="authUsername" style="width: 100%; padding: 12px 15px; background: #0f172a; border: 1px solid rgba(255,255,255,0.2); color: #fff; border-radius: 10px; font-size: 0.9rem;" placeholder="Enter your username...">
+            </div>
+
+            <div style="text-align: left; margin-bottom: 20px;">
+                <label style="display: block; font-size: 0.9rem; color: #93c5fd; margin-bottom: 6px; font-weight: 500;">Password:</label>
+                <input type="password" id="authPassword" style="width: 100%; padding: 12px 15px; background: #0f172a; border: 1px solid rgba(255,255,255,0.2); color: #fff; border-radius: 10px; font-size: 0.9rem;" placeholder="Enter your password...">
+            </div>
+
+            <button id="authBtn" onclick="handleAuth()" style="background: #2563eb; color: white; border: none; padding: 12px 24px; border-radius: 10px; font-weight: 600; cursor: pointer; width: 100%; font-size: 0.95rem;">Login to System →</button>
+            <div class="auth-toggle" id="authToggleText" onclick="toggleAuthMode()">Don't have an account? Sign Up</div>
+        </div>
+    </div>
+        .topic-filter-container {
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-bottom: 40px;
+        }
+        .topic-pill {
+            background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.3); padding: 10px 20px; border-radius: 30px; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: 0.2s; backdrop-filter: blur(8px); color: white;
+        }
+        .topic-pill:hover, .topic-pill.active {
+            background: #fde047; color: #0f172a; border-color: #fde047; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .features-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 25px; }
+        .feature-card {
+            background: rgba(255, 255, 255, 0.12); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.25); padding: 32px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        .feature-number { font-size: 1.4rem; font-weight: 700; color: #fde047; margin-bottom: 12px; }
+        .feature-title { font-size: 1.3rem; font-weight: 700; margin-bottom: 10px; }
+        .feature-desc { font-size: 0.95rem; line-height: 1.6; opacity: 0.9; margin-bottom: 18px; }
+        .feature-link { color: #ffffff; font-weight: 600; text-decoration: none; font-size: 0.95rem; }
+
+        .contribution-box { background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.3); padding: 40px; border-radius: 24px; margin-top: 50px; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        .form-group.full-width { grid-column: span 2; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.95rem; }
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%; padding: 14px; border-radius: 10px; border: none; font-size: 1rem; background: rgba(255, 255, 255, 0.9); color: #0f172a;
+        }
+        .submit-btn { background: #0f172a; color: white; border: none; padding: 16px 30px; border-radius: 10px; cursor: pointer; font-weight: 600; width: 100%; transition: 0.2s; font-size: 1rem; }
+        .submit-btn:hover { background: #1e293b; }
+
+        .validation-error-msg {
+            background: #fee2e2; color: #b91c1c; padding: 12px 20px; border-radius: 10px; font-weight: 600; margin-bottom: 20px; display: none; border-left: 5px solid #ef4444; font-size: 0.95rem;
+        }
+
+        .timeline-list { position: relative; padding-left: 30px; }
+        .timeline-list::before { content: ''; position: absolute; top: 0; bottom: 0; left: 10px; width: 4px; background: rgba(255, 255, 255, 0.4); border-radius: 2px; }
+        
+        .timeline-card { 
+            position: relative; background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.3); padding: 25px; border-radius: 16px; margin-bottom: 22px; margin-left: 20px; border-left: 5px solid #facc15; transition: 0.3s; cursor: pointer; 
+        }
+        .timeline-card:hover { 
+            transform: translateY(-4px); background: rgba(255, 255, 255, 0.25); box-shadow: 0 10px 25px rgba(0,0,0,0.2); border-color: #fde047;
+        }
+        .t-category-badge { display: inline-block; background: #0f172a; color: #fde047; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; margin-bottom: 8px; text-transform: uppercase; }
+        .t-date { font-size: 0.85rem; font-weight: 700; color: #fde047; margin-bottom: 6px; }
+        .t-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 10px; }
+        .t-desc { font-size: 0.96rem; line-height: 1.6; opacity: 0.95; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+        .google-pagination-wrapper {
+            margin-top: 50px;
+            text-align: center;
+            background: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(12px);
+            padding: 30px 20px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .google-logo-row {
+            font-size: 2.8rem;
+            font-weight: 800;
+            letter-spacing: -2px;
+            margin-bottom: 15px;
+            display: inline-block;
+            user-select: none;
+        }
+        .g-blue { color: #4285f4; }
+        .g-red { color: #ea4335; }
+        .g-yellow { color: #fbbc05; }
+        .g-green { color: #34a853; }
+        
+        .pagination-boxes {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .page-box {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            min-width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: 0.2s;
+            font-weight: 700;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .page-box span {
+            font-size: 0.65rem;
+            font-weight: 500;
+            opacity: 0.85;
+            margin-top: 2px;
+        }
+        .page-box:hover, .page-box.active {
+            background: #fde047;
+            color: #0f172a;
+            border-color: #fde047;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+        }
+        .page-next-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 0 20px;
+            height: 50px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.2s;
+        }
+        .page-next-btn:hover { background: #fde047; color: #0f172a; }
+
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(8px); display: flex; justify-content: center; align-items: center; z-index: 9999; opacity: 0; pointer-events: none; transition: 0.3s ease;
+        }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+        .modal-content {
+            background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.2); width: 90%; max-width: 650px; padding: 40px; border-radius: 24px; box-shadow: 0 25px 50px rgba(0,0,0,0.5); transform: translateY(20px); transition: 0.3s ease; position: relative; color: white;
+        }
+        .modal-overlay.active .modal-content { transform: translateY(0); }
+        .modal-close-btn {
+            position: absolute; top: 20px; right: 20px; background: rgba(255, 255, 255, 0.1); border: none; color: white; width: 36px; height: 36px; border-radius: 50%; font-size: 1.2rem; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: 0.2s;
+        }
+        .modal-close-btn:hover { background: #ef4444; }
+        .modal-category { display: inline-block; background: #3b82f6; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; margin-bottom: 12px; text-transform: uppercase; }
+        .modal-date { font-size: 0.9rem; font-weight: 700; color: #fde047; margin-bottom: 10px; }
+        .modal-title { font-size: 1.6rem; font-weight: 700; margin-bottom: 15px; line-height: 1.3; }
+        .modal-desc { font-size: 1.02rem; line-height: 1.7; opacity: 0.95; margin-bottom: 25px; }
+
+        .cert-modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(10px); display: flex; justify-content: center; align-items: center; z-index: 10000; opacity: 0; pointer-events: none; transition: 0.3s ease; padding: 20px;
+        }
+        .cert-modal-overlay.active { opacity: 1; pointer-events: auto; }
+        
+        .certificate-card {
+            background: #ffffff; color: #1e293b; width: 100%; max-width: 750px; padding: 50px; border-radius: 20px; box-shadow: 0 30px 60px rgba(0,0,0,0.4); position: relative; border: 10px solid #fde047; text-align: center;
+        }
+        .cert-close-btn {
+            position: absolute; top: 15px; right: 15px; background: #0f172a; border: none; color: white; width: 34px; height: 34px; border-radius: 50%; font-size: 1.1rem; cursor: pointer; display: flex; justify-content: center; align-items: center;
+        }
+        .cert-header { font-size: 0.85rem; font-weight: 700; color: #2563eb; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px; }
+        .cert-title { font-size: 2.2rem; font-weight: 700; color: #0f172a; margin-bottom: 15px; text-transform: uppercase; }
+        .cert-sub { font-size: 1rem; color: #64748b; margin-bottom: 20px; }
+        .cert-recipient { font-size: 1.8rem; font-weight: 700; color: #1d4ed8; margin: 10px 0; border-bottom: 2px dashed #cbd5e1; display: inline-block; padding: 0 30px 5px 30px; }
+        .cert-body { font-size: 1.02rem; line-height: 1.6; color: #334155; margin: 15px 0; }
+        .cert-posts-badge {
+            background: #eff6ff; color: #1d4ed8; border: 2px solid #3b82f6; padding: 8px 20px; border-radius: 30px; font-size: 1.05rem; font-weight: 700; display: inline-block; margin: 10px 0;
+        }
+        .cert-slogan {
+            font-style: italic; font-weight: 600; color: #b45309; background: #fef3c7; padding: 12px 20px; border-radius: 12px; margin-top: 15px; font-size: 1rem; border-left: 4px solid #f59e0b;
+        }
+        .cert-print-btn {
+            background: #0f172a; color: white; border: none; padding: 12px 25px; border-radius: 30px; font-weight: 600; margin-top: 25px; cursor: pointer; transition: 0.2s;
+        }
+        .cert-print-btn:hover { background: #1e293b; }
+    </style>
+</head>
+<body>
+
+    <header class="main-header">
+        <div class="logo-area"><span>🔍</span> THE FACT ( NEWS)</div>
+        <ul class="nav-links">
+            <li><a href="#features">Explore</a></li>
+            <li><a href="#timeline">Timeline</a></li>
+            <li><a href="#share">Contribute</a></li>
+        </ul>
+        <a href="#share" class="cta-roadmap-btn">Create Timeline</a>
+    </header>
+
+    <div class="hacker-stats-bar">
+        <div class="hs-left">
+            <div class="hs-avatar" id="profileAvatar">UR</div>
+            <div class="hs-info">
+                <h3 id="profileNameDisplay">Global Researcher Profile</h3>
+                <p id="profileEmailDisplay">Active Contributor Mode</p>
+            </div>
+        </div>
+        <div class="hs-metrics">
+            <div class="hs-metric-box">
+                <div class="hs-metric-value" id="statPostsCount">0</div>
+                <div class="hs-metric-label">Published Posts</div>
+            </div>
+            <div class="hs-metric-box">
+                <div class="hs-metric-value" id="statCertStatus" style="color: #ef4444;">Locked 🔒</div>
+                <div class="hs-metric-label">Certificate Status</div>
+            </div>
+        </div>
+    </div>
+
+    <section class="hero-section">
+        <div class="hero-left">
+            <div id="breakingNewsBadge" style="display: inline-flex; align-items: center; gap: 8px; background: #ef4444; color: white; padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 700; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);">
+                🔥 BREAKING GLOBAL UPDATE (<span id="currentLiveDate"></span>)
+            </div>
+            <h1>Universal 195 Countries Live Intelligence Database</h1>
+            <p>Automated multi-topic global archive tracking real-time daily updates, historical timelines, and breaking news across 195 nations worldwide.</p>
+            <a href="#timeline" class="find-btn"><span>🔍</span> Explore Daily Live Timeline ➔</a>
+            <div class="trusted-text">🔥 Publish at least 8 verified daily research reports to unlock your official Research Certificate!</div>
+        </div>
+        <div class="hero-right">
+            <div class="map-circle">
+                <div id="userMap"></div>
+                <div class="map-badge" id="mapBadgeText">🇻🇳 Profile: Vietnam</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="content-section" id="features">
+        <div class="section-header-tag">Dynamic Topic Filtering System</div>
+        <h2 class="section-main-title">Select a Field of Study for Instant Context</h2>
+        
+        <div class="topic-filter-container">
+            <button class="topic-pill active" onclick="filterByTopic('All')">🌐 All Topics</button>
+            <button class="topic-pill" onclick="filterByTopic('Gender Equality')">⚖️ Gender Equality</button>
+            <button class="topic-pill" onclick="filterByTopic('Human Rights')">🛡️ Human Rights</button>
+            <button class="topic-pill" onclick="filterByTopic('UNICEF & Children')">👶 UNICEF & Children</button>
+            <button class="topic-pill" onclick="filterByTopic('Economic Law')">📈 Economic Law</button>
+            <button class="topic-pill" onclick="filterByTopic('Gen Z & Future')">🚀 Gen Z Prospects</button>
+            <button class="topic-pill" onclick="filterByTopic('Environment')">🌱 Environment</button>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-number">01</div>
+                <div class="feature-title">Human Rights & Social Welfare</div>
+                <div class="feature-desc">Track daily legal developments, refugee welfare programs, and civic protection updates worldwide.</div>
+                <a href="#timeline" class="feature-link" onclick="filterByTopic('Human Rights')">View Human Rights ➔</a>
+            </div>
+            <div class="feature-card">
+                <div class="feature-number">02</div>
+                <div class="feature-title">UNICEF & Child Development</div>
+                <div class="feature-desc">Monitor daily field reports, child protection alerts, and educational milestones across global regions.</div>
+                <a href="#timeline" class="feature-link" onclick="filterByTopic('UNICEF & Children')">View UNICEF Reports ➔</a>
+            </div>
+            <div class="feature-card">
+                <div class="feature-number">03</div>
+                <div class="feature-title">Economic Law & Integration</div>
+                <div class="feature-desc">Research daily trade agreements, policy changes, and financial compliance updates.</div>
+                <a href="#timeline" class="feature-link" onclick="filterByTopic('Economic Law')">View Economic Law ➔</a>
+            </div>
+            <div class="feature-card">
+                <div class="feature-number">04</div>
+                <div class="feature-title">Gen Z Prospects & Climate Action</div>
+                <div class="feature-desc">Explore daily youth-led climate initiatives, technological innovations, and sustainability reports.</div>
+                <a href="#timeline" class="feature-link" onclick="filterByTopic('Gen Z & Future')">View Gen Z Prospects ➔</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="content-section" id="share">
+        <div class="contribution-box">
+            <div class="section-header-tag">Community Contribution Corner</div>
+            <h2 class="section-main-title" style="margin-bottom: 25px; font-size: 2rem;">Publish a Daily News Report to Timeline</h2>
+            
+            <div id="validationErrorBox" class="validation-error-msg"></div>
+
+            <div class="form-grid">
+                <div class="form-group full-width">
+                    <label> Author / Group Name (Name for Certificate):</label>
+                    <input type="text" id="contribAuthor" placeholder="e.g., Global Youth Researcher" oninput="updateProfileLivePreview()">
+                </div>
+                <div class="form-group">
+                    <label>Select Category:</label>
+                    <select id="contribCategory">
+                        <option value="Gender Equality">⚖️ Gender Equality</option>
+                        <option value="Human Rights">🛡️ Human Rights</option>
+                        <option value="UNICEF & Children">👶 UNICEF & Children</option>
+                        <option value="Economic Law">📈 Economic Law</option>
+                        <option value="Gen Z & Future">🚀 Gen Z & Future</option>
+                        <option value="Environment">🌱 Environment</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Select Page / Timeline Month (1 to 7):</label>
+                    <select id="contribPageSelect">
+                        <option value="1">Page 1 (August 2026 - Today)</option>
+                        <option value="2">Page 2 (July 2026)</option>
+                        <option value="3">Page 3 (June 2026)</option>
+                        <option value="4">Page 4 (May 2026)</option>
+                        <option value="5">Page 5 (April 2026)</option>
+                        <option value="6">Page 6 (March 2026)</option>
+                        <option value="7">Page 7 (Historical Archives)</option>
+                    </select>
+                </div>
+                <div class="form-group full-width">
+                    <label>News Headline / Title:</label>
+                    <input type="text" id="contribTitle" placeholder="e.g., Emergency climate protocol launched today...">
+                </div>
+                <div class="form-group full-width">
+                    <label>Detailed Breaking News Report (Minimum 20 characters):</label>
+                    <textarea id="contribDesc" rows="4" placeholder="Record today's factual news updates, metrics, or field observations..."></textarea>
+                </div>
+            </div>
+            <button class="submit-btn" onclick="addNewTimelineEvent()">Validate & Publish Report</button>
+        </div>
+    </section>
+
+    <section class="content-section" id="timeline">
+        <div class="section-header-tag">Chronological News Database</div>
+        <h2 class="section-main-title" id="timelineHeading">Global Daily Timeline: Vietnam</h2>
+        
+        <div class="timeline-list" id="timelineContainer"></div>
+        <div class="google-pagination-wrapper">
+            <div class="google-logo-row">
+                <span class="g-blue">T</span><span class="g-red">H</span><span class="g-yellow">E</span> <span class="g-green">F</span><span class="g-blue">A</span><span class="g-red">C</span><span class="g-yellow">T</span>
+            </div>
+            <div class="pagination-boxes" id="paginationBoxesContainer">
+            </div>
+        </div>
+    </section>
+
+    <div class="modal-overlay" id="detailModal" onclick="closeModalOnOutside(event)">
+        <div class="modal-content" id="modalBox">
+            <button class="modal-close-btn" onclick="closeModal()">✕</button>
+            <div class="modal-category" id="modalCategory">Category</div>
+            <div class="modal-date" id="modalDate">Date</div>
+            <div class="modal-title" id="modalTitle">Title</div>
+            <div class="modal-desc" id="modalDesc">Description</div>
+            <button class="submit-btn" style="margin-top: 15px;" onclick="openCertificateModal()">🏆 Claim Certificate (if unlocked)</button>
+        </div>
+    </div>
+
+    <div class="cert-modal-overlay" id="certModal" onclick="closeCertOnOutside(event)">
+        <div class="certificate-card" id="certBox">
+            <button class="cert-close-btn" onclick="closeCertificateModal()">✕</button>
+            <div class="cert-header">🌟 THE FACT ( NEWS) • Official Recognition</div>
+            <div class="cert-title">Certificate of Achievement</div>
+            <div class="cert-sub">Awarded for outstanding daily news reporting and contributions</div>
+            
+            <div class="cert-body">Proudly presented to elite researcher:</div>
+            <div class="cert-recipient" id="certRecipientName">Global Researcher</div>
+            
+            <div>
+                <div class="cert-posts-badge" id="certPostsBadgeDisplay">📝 Successfully Published Daily Reports</div>
+            </div>
+
+            <div class="cert-body" style="font-size: 0.95rem;">
+                Successfully completed core daily monitoring milestones, actively contributing verified real-time data worldwide.
+            </div>
+
+            <div class="cert-slogan">
+                "Small efforts make a huge impact on helping others."
+            </div>
+
+            <button class="cert-print-btn" onclick="window.print()">🖨️ Save / Print Certificate (PDF)</button>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        function updateLiveNewsTicker() {
+            const now = new Date();
+            const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
+            const formattedDate = now.toLocaleDateString('en-US', options);
+            const dateElement = document.getElementById('currentLiveDate');
+            if (dateElement) {
+                dateElement.innerText = formattedDate;
+            }
+        }
+        updateLiveNewsTicker();
+        setInterval(updateLiveNewsTicker, 60000);
+        const multiPageNewsData = {
+            1: [
+                { category: "Environment", date: "16-08-2026", title: "Rangelands conservation initiative launched in northern regions", desc: "Emergency community measures deployed today to protect drying pasturelands. Local herders and ecological experts coordinate real-time soil moisture monitoring programs." },
+                { category: "Human Rights", date: "16-08-2026", title: "Emergency medical response campaign expands rapidly", desc: "Field workers and former community volunteers join forces today to launch intensive public health education campaigns, reaching over 45,000 vulnerable residents." }
+            ],
+            2: [
+                { category: "UNICEF & Children", date: "28-07-2026", title: "Nutritional support programs reach remote rural schools", desc: "UNICEF partners with regional health agencies to distribute fortified meal kits, benefiting over 15,000 children across mountainous districts." },
+                { category: "Economic Law", date: "15-07-2026", title: "New micro-enterprise tax exemptions implemented", desc: "Legislative assemblies approved simplified financial reporting criteria to foster small business growth during the third quarter." }
+            ],
+            3: [
+                { category: "Gen Z & Future", date: "22-06-2026", title: "National youth coding marathon announces winners", desc: "Over 3,000 student developers competed in creating decentralized applications for community disaster preparedness and relief coordination." },
+                { category: "Gender Equality", date: "10-06-2026", title: "Leadership mentorship programs launch nationwide", desc: "Corporate initiatives partner with academic institutions to provide executive training fellowships for emerging female leaders." }
+            ],
+            4: [
+                { category: "Environment", date: "19-05-2026", title: "Urban reforestation project exceeds milestone goals", desc: "Metropolitan municipalities plant over 50,000 shade-producing native trees to lower urban heat island effects ahead of summer." },
+                { category: "Human Rights", date: "05-05-2026", title: "Legal aid centers expand free advisory hours", desc: "National bar associations increase pro-bono consultation capacity for marginalized communities and newly relocated families." }
+            ],
+            5: [
+                { category: "UNICEF & Children", date: "20-04-2026", title: "Adolescent mental health hotline operational 24/7", desc: "Expanded psychological support services provide immediate counseling and safe space resources for students preparing for examinations." },
+                { category: "Economic Law", date: "12-04-2026", title: "Bilateral trade protocols simplified for small vendors", desc: "Customs authorities streamline electronic documentation requirements to expedite cross-border distribution channels." }
+            ],
+            6: [
+                { category: "Gen Z & Future", date: "15-03-2026", title: "Green energy innovation grants awarded to university teams", desc: "State research funding supports student-led solar microgrid prototypes designed for off-grid rural community applications." },
+                { category: "Environment", date: "02-03-2026", title: "Clean water infrastructure upgrade reaches completion", desc: "Engineers finalize pipeline modernizations in eastern agricultural counties, securing safe drinking water access for 30,000 residents." }
+            ],
+            7: [
+                { category: "Human Rights", date: "15-02-2026", title: "Civic protection frameworks updated for vulnerable groups", desc: "Comprehensive legal reviews reinforce social welfare safety nets and protection protocols against online fraud and exploitation." },
+                { category: "Economic Law", date: "01-02-2026", title: "Annual fiscal policy guidelines established for sustainable growth", desc: "Financial regulators outline transparent auditing standards to encourage transparent investments and green enterprise financing." }
+            ]
+        };
+
+        let customDatabase = {};
+        let totalGlobalPostsCount = 0; 
+        let currentCountry = "Vietnam";
+        let currentTopicFilter = "All";
+        let activePage = 1;
+        let activeItemAuthor = "Global Researcher";
+
+        const pageTitles = {
+            1: "Page 1: Hot Update (August 2026)",
+            2: "Page 2: News for July 2026",
+            3: "Page 3: News for June 2026",
+            4: "Page 4: News for May 2026",
+            5: "Page 5: News for April 2026",
+            6: "Page 6: News for March 2026",
+            7: "Page 7: Historical Archives"
+        };
+
+        const pageSubtitles = {
+            1: "Today & Recent Live Reports",
+            2: "Mid-Year Review & Updates",
+            3: "Early Summer Milestones",
+            4: "Spring Policy Implementations",
+            5: "Q2 Frameworks & Guidelines",
+            6: "Early Year Innovation Reports",
+            7: "Historical Foundation Archives"
+        };
+
+        function updateProfileLivePreview() {
+            const authorInput = document.getElementById('contribAuthor').value.trim();
+            if (authorInput) {
+                document.getElementById('profileNameDisplay').innerText = authorInput;
+                activeItemAuthor = authorInput;
+                let initials = authorInput.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                document.getElementById('profileAvatar').innerText = initials || "UR";
+            }
+        }
+
+        function updateStatsDisplay() {
+            document.getElementById('statPostsCount').innerText = totalGlobalPostsCount;
+            const certStatusEl = document.getElementById('statCertStatus');
+
+            if (totalGlobalPostsCount >= 8) {
+                certStatusEl.innerText = "Unlocked 🎉";
+                certStatusEl.style.color = "#4ade80";
+            } else {
+                certStatusEl.innerText = `You need ${8 - totalGlobalPostsCount} more reports to unlock the certification.`;
+                certStatusEl.style.color = "#ef4444";
+            }
+        }
+
+        function validateResearchContent(title, desc) {
+            const errorBox = document.getElementById('validationErrorBox');
+            if (title.length < 5 || desc.length < 20) {
+                errorBox.style.display = 'block';
+                errorBox.innerText = '❌ Verification Failed: Title must be at least 5 characters and Description must contain at least 20 characters of substantive news data.';
+                return false;
+            }
+            const randomKeysCheck = /^[asdfghjklqwertyuiopzxcvbnm]+$/i;
+            if (randomKeysCheck.test(title.replace(/\s+/g, '')) || randomKeysCheck.test(desc.replace(/\s+/g, ''))) {
+                errorBox.style.display = 'block';
+                errorBox.innerText = '❌ Verification Failed: Content appears to be random keystrokes. Please enter legitimate daily news.';
+                return false;
+            }
+            errorBox.style.display = 'none';
+            return true;
+        }
+
+        function addNewTimelineEvent() {
+            const author = document.getElementById('contribAuthor').value.trim() || "Global Researcher";
+            const category = document.getElementById('contribCategory').value;
+            const targetPage = parseInt(document.getElementById('contribPageSelect').value);
+            const title = document.getElementById('contribTitle').value.trim();
+            const desc = document.getElementById('contribDesc').value.trim();
+
+            if (!title || !desc) {
+                const errorBox = document.getElementById('validationErrorBox');
+                errorBox.style.display = 'block';
+                errorBox.innerText = '❌ Please fill in all required fields (Title and Description)!';
+                return;
+            }
+
+            if (!validateResearchContent(title, desc)) {
+                return;
+            }
+
+            totalGlobalPostsCount++;
+            updateStatsDisplay();
+
+            const now = new Date();
+            const formattedDate = `${String(now.getDate()).padStart(2, '0')}-${String(now.getMonth()+1).padStart(2, '0')}-${now.getFullYear()}`;
+
+            if (!customDatabase[currentCountry]) {
+                customDatabase[currentCountry] = JSON.parse(JSON.stringify(multiPageNewsData));
+            }
+
+            customDatabase[currentCountry][targetPage].unshift({
+                category: category,
+                date: formattedDate,
+                title: title,
+                desc: `${desc} (Reported by: ${author})`,
+                author: author
+            });
+
+            activePage = targetPage;
+            renderTimeline();
+            renderPaginationBoxes();
+            
+            document.getElementById('contribTitle').value = "";
+            document.getElementById('contribDesc').value = "";
+
+            document.getElementById('timeline').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function renderPaginationBoxes() {
+            const container = document.getElementById('paginationBoxesContainer');
+            container.innerHTML = "";
+
+            for (let i = 1; i <= 7; i++) {
+                const box = document.createElement('div');
+                box.className = `page-box ${activePage === i ? 'active' : ''}`;
+                box.innerHTML = `${i}<span>Page ${i}</span>`;
+                box.onclick = () => {
+                    activePage = i;
+                    renderTimeline();
+                    renderPaginationBoxes();
+                    document.getElementById('timeline').scrollIntoView({ behavior: 'smooth' });
+                };
+                container.appendChild(box);
+            }
+            const nextBtn = document.createElement('button');
+            nextBtn.className = 'page-next-btn';
+            nextBtn.innerHTML = `Next ➔`;
+            nextBtn.onclick = () => {
+                if (activePage < 7) {
+                    activePage++;
+                } else {
+                    activePage = 1; 
+                }
+                renderTimeline();
+                renderPaginationBoxes();
+                document.getElementById('timeline').scrollIntoView({ behavior: 'smooth' });
+            };
+            container.appendChild(nextBtn);
+        }
+
+        function renderTimeline() {
+            const container = document.getElementById('timelineContainer');
+            const heading = document.getElementById('timelineHeading');
+            heading.innerText = `${pageTitles[activePage]} (${currentCountry})`;
+
+            let countryData = customDatabase[currentCountry] || multiPageNewsData;
+            let pageEvents = countryData[activePage] || [];
+
+            const filteredEvents = currentTopicFilter === "All" 
+                ? pageEvents 
+                : pageEvents.filter(item => item.category === currentTopicFilter);
+
+            container.innerHTML = "";
+
+            if (filteredEvents.length === 0) {
+                container.innerHTML = `<div class="timeline-card"><div class="t-title">No reports found for this topic on Page ${activePage} in ${currentCountry}.</div><div class="t-desc">Contribute news to Page ${activePage} using the form above!</div></div>`;
+                return;
+            }
+
+            filteredEvents.forEach((item) => {
+                const card = document.createElement('div');
+                card.classList.add('timeline-card');
+                card.onclick = () => openModal(item);
+                
+                card.innerHTML = `
+                    <div class="t-category-badge">${item.category}</div>
+                    <div class="t-date">📅 ${item.date} • Page ${activePage} Archive (${pageSubtitles[activePage]})</div>
+                    <div class="t-title">${item.title}</div>
+                    <div class="t-desc">${item.desc}</div>
+                    <div class="click-hint">👆 Click to view full details</div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function openModal(item) {
+            document.getElementById('modalCategory').innerText = item.category;
+            document.getElementById('modalDate').innerText = `📅 Date: ${item.date}`;
+            document.getElementById('modalTitle').innerText = item.title;
+            document.getElementById('modalDesc').innerText = item.desc;
+            
+            activeItemAuthor = item.author || document.getElementById('contribAuthor').value || "Global Researcher";
+            document.getElementById('detailModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('detailModal').classList.remove('active');
+        }
+
+        function closeModalOnOutside(event) {
+            if (event.target.id === 'detailModal') {
+                closeModal();
+            }
+        }
+
+        function openCertificateModal() {
+            if (totalGlobalPostsCount < 8) {
+                const errorBox = document.getElementById('validationErrorBox');
+                errorBox.style.display = 'block';
+                errorBox.innerText = `⚠️ Certificate Locked: You need at least 8 published reports (Currently you have ${totalGlobalPostsCount}).`;
+                document.getElementById('share').scrollIntoView({ behavior: 'smooth' });
+                return;
+            }
+            closeModal();
+            document.getElementById('certRecipientName').innerText = activeItemAuthor;
+            document.getElementById('certPostsBadgeDisplay').innerText = `📝 Successfully Published ${totalGlobalPostsCount} Reports`;
+            document.getElementById('certModal').classList.add('active');
+        }
+
+        function closeCertificateModal() {
+            document.getElementById('certModal').classList.remove('active');
+        }
+
+        function closeCertOnOutside(event) {
+            if (event.target.id === 'certModal') {
+                closeCertificateModal();
+            }
+        }
+
+        function filterByTopic(topic) {
+            currentTopicFilter = topic;
+            document.querySelectorAll('.topic-pill').forEach(btn => {
+                if(btn.innerText.includes(topic) || (topic === 'All' && btn.innerText.includes('All'))) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            renderTimeline();
+            document.getElementById('timeline').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        const map = L.map('userMap', {
+            zoomControl: false,
+            attributionControl: false,
+            dragging: true,
+            scrollWheelZoom: false,
+            minZoom: 2,
+            maxZoom: 6
+        }).setView([16, 106], 4);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        let selectedLayer = null;
+
+        fetch('https://raw.githubusercontent.com/datasets/geo-boundaries-world-110m/master/countries.geojson')
+            .then(res => res.json())
+            .then(data => {
+                L.geoJson(data, {
+                    style: function() {
+                        return { color: '#64748b', weight: 0.6, fillColor: '#f1f5f9', fillOpacity: 0.6 };
+                    },
+                    onEachFeature: function(feature, layer) {
+                        const countryName = feature.properties.name || feature.properties.ADMIN || "Selected Country";
+
+                        if (countryName === "Vietnam") {
+                            selectedLayer = layer;
+                            layer.setStyle({ color: '#1d4ed8', weight: 1.5, fillColor: '#3b82f6', fillOpacity: 0.8 });
+                            document.getElementById('mapBadgeText').innerHTML = `🇻🇳 Profile: Vietnam`;
+                            map.fitBounds(layer.getBounds());
+                            currentCountry = "Vietnam";
+                            renderTimeline();
+                        }
+
+                        layer.on({
+                            mouseover: function() {
+                                if (layer !== selectedLayer) layer.setStyle({ fillColor: '#93c5fd', fillOpacity: 0.7 });
+                            },
+                            mouseout: function() {
+                                if (layer !== selectedLayer) layer.setStyle({ fillColor: '#f1f5f9', fillOpacity: 0.6 });
+                            },
+                            click: function() {
+                                if (selectedLayer && selectedLayer !== layer) {
+                                    selectedLayer.setStyle({ color: '#64748b', weight: 0.6, fillColor: '#f1f5f9', fillOpacity: 0.6 });
+                                }
+                                selectedLayer = layer;
+                                layer.setStyle({ color: '#1d4ed8', weight: 1.5, fillColor: '#3b82f6', fillOpacity: 0.8 });
+                                document.getElementById('mapBadgeText').innerHTML = `🌐 Profile: ${countryName}`;
+                                map.fitBounds(layer.getBounds());
+                                currentCountry = countryName;
+                                renderTimeline();
+                            }
+                        });
+                    }
+                }).addTo(map);
+            });
+
+        renderPaginationBoxes();
+        updateStatsDisplay();
+    </script>
+</body>
+</html>
